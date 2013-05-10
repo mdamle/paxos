@@ -149,7 +149,6 @@ val PropNumAccepted = Ref(0)
 val PropNumRejected = Ref(0)
 val PropQuorumSize = Ref(numNodes/2)
 val PropState = Ref(INIT)
---val PropQuorumSize = Ref(numNodes - 4)
 
 
 {- Acceptor State
@@ -425,7 +424,7 @@ def processMsg(m, ch) =
 		handleInMsg(role?, m, getOutch(ch, out:outs)))
 
 {- 
-	calls ch.get() and Rwait(timeout) in parallel. Pruns and uses the first publication received.
+	calls ch.get() and Rwait(timeout) in parallel. Prunes and uses the first publication received.
 	used to detect timeouts.
 -} 
 def handleMsg(ch) = 
@@ -610,53 +609,52 @@ printAcceptors() >>
   -
 -}
 
---1.
-{- Successful Paxos round simulation in absence of any failures.
-   Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors. 
-   Concludes with 1 achieving consensus with 7 votes. 
+{- 1. Uncomment below line to see a Successful Paxos round simulation in absence of any failures.
+      Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors. 
+      Concludes with 1 achieving consensus with 7 votes. 
 -}
--- (map(start, ds.getProposers()) >> map(run, ds.getProcList()))
+(map(start, ds.getProposers()) >> map(run, ds.getProcList()))
 
---2.
-{- Successful Paxos round simulation in presence of 1 Acceptor failure.
-   Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, 
-   but forcefully fails Acceptor 0 after waiting for an arbitrary time > 1000 ms. 
-   Concludes with 1 achieving consensus with either 6 or 7 votes depending on when node 0 fails. 
+
+{- 2. Uncomment the 2 lines below to see successful Paxos round simulation in presence of 1 Acceptor failure.
+      Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, 
+      but forcefully fails Acceptor 0 after waiting for an arbitrary time > 1000 ms. 
+      Concludes with 1 achieving consensus with either 6 or 7 votes depending on when node 0 fails. 
 -}
 --(map(start, ds.getProposers()) >> map(run, ds.getProcList())) | 
 --(Random(2000) >r > Rwait(r + 800) >> ds.failNode(0))
 
---3.
-{- Successful Paxos round simulation in presence of leader/proposer failure.
-   Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, but 
-   forcefully fails Proposer 1 after some arbitrary time. Depending on when 1 fails,
-   the system either makes progress with 1 or elects a new leader, that is the max alive node 
-   (node id 7) and 7 takes the protocol to conclusion.
-   This condition is hard to achieve and requires multiple (> 10) tries. 
+
+{- 3. Uncomment the 2 lines below to see successful Paxos round simulation in presence of leader/proposer failure.
+      Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, but 
+      forcefully fails Proposer 1 after some arbitrary time. Depending on when 1 fails,
+      the system either makes progress with 1 or elects a new leader, that is the max alive node 
+      (node id 7) and 7 takes the protocol to conclusion.
+      This condition is hard to achieve and requires multiple (> 10) tries. 
 -}
 --(map(start, ds.getProposers()) >> map(run, ds.getProcList())) |
 --(Random(1000) > r > Rwait(1500 + r) >> ds.failNode(1))
 
---4.
-{- Successful Paxos round simulation in presence of leader/proposer failure and recovery.
-   Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, but 
-   forcefully fails Proposer 1 after some time and then recovers it. The system elects a new leader, 
-   that is the max alive node (node id 7) and 7 takes the protocol to conclusion. 1 comes back as
-   proposer but changes itself silenty to Acceptor if its sees proposal number of 7 > that of itself.
-   This condition is hard to achieve and requires multiple (>10) tries.
+
+{- 4.  Uncomment the 2 lines below to see successful Paxos round simulation in presence of leader/proposer failure and recovery.
+       Uses default init configuration, 1 as Proposer, 0 and 2-7 as Acceptors, but 
+       forcefully fails Proposer 1 after some time and then recovers it. The system elects a new leader, 
+       that is the max alive node (node id 7) and 7 takes the protocol to conclusion. 1 comes back as
+       proposer but changes itself silenty to Acceptor if its sees proposal number of 7 > that of itself.
+       This condition is hard to achieve and requires multiple (>10) tries.
 -}
 --(map(start, ds.getProposers()) >> map(run, ds.getProcList())) |
 --(Random(1000) > r > Rwait(1500 + r) >> ds.failNode(1) >> Rwait(4500) >> ds.unfailNode(1))
 
---5.
-{- Starts the simulation with/without convergence due to random failures and recoveries
+
+{- 5.  Uncomment the line below to start the simulation with/without convergence due to random failures and recoveries
 -}
 -- (map(start, ds.getProposers()) >> map(run, ds.getProcList())) | failUnfailRandom()
 
---6.
-{- Some other random config with multiple leader elections and obtainment of consensus. 
+
+{- 6.  Uncomment the lines to run yet another random config with multiple leader elections and obtainment of consensus. 
 -}
 
-(map(start, ds.getProposers()) >> map(run, ds.getProcList())) |
-(Rwait(6000) >> (ds.failNode(1)) >> Rwait(3000) >> ds.failNode(7))
->> Rwait(8000) >> ds.failNode(6) >> ds.unfailNode(7) >> Rwait(8000) >> ds.failNode(5)
+--(map(start, ds.getProposers()) >> map(run, ds.getProcList())) |
+--(Rwait(6000) >> (ds.failNode(1)) >> Rwait(3000) >> ds.failNode(7))
+-->> Rwait(8000) >> ds.failNode(6) >> ds.unfailNode(7) >> Rwait(8000) >> ds.failNode(5)
